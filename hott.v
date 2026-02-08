@@ -191,7 +191,7 @@ Qed.
 Check idmap.
 (* 2.3 *)
 
-Definition transport {A : Type} {P : A -> Type} {x y : A} (p : x = y)
+Definition transport {A : Type} (P : A -> Type) {x y : A} (p : x = y)
 : P x -> P y 
 := match p with idpath => idmap end.
 
@@ -235,15 +235,19 @@ Arguments transport_theorem {A}%type_scope {P}%function_scope
 
  *)
 Print transport_theorem.
+Print idmap.
 
 (* Path lifting property *)
 
-Definition lift {A : Type} {P : A -> Type} {x y : A} {u : P x} (p : x = y)
-: (x, u) = (y, (transport p) u)
+Definition lift {A : Type} {P : A -> Type} {x y : A} 
+(u : P x) (p : x = y)
+  : (x, u) = (y, transport (fun _ => P x) p u) 
 := match p with idpath => idpath end.
 
+Print lift.
+
 Definition lift_t {A : Type} {P : A -> Type} {x y : A} {u : P x} (p : x = y)
-: (x, u) = (y, (transport p) u).
+: (x, u) = (y, (transport _ p) u).
 Proof.
   induction p.
   unfold transport.
@@ -256,7 +260,7 @@ Definition apd_t
   {A : Type} {P : A -> Type} {x y : A} 
   (f : forall x, P x) 
   (p : x = y) 
-: ((transport p) (f x)) = f y.
+: ((transport _ p) (f x)) = f y.
 Proof.
   induction p.
   unfold transport.
@@ -267,13 +271,13 @@ Definition apd
   {A : Type} {P : A -> Type} {x y : A} 
   (f : forall x, P x) 
   (p : x = y) 
-: ((transport p) (f x)) = f y
+: ((transport _ p) (f x)) = f y
 := match p with idpath => idpath end.
 
 Theorem equal_apd
   {A : Type} {P : A -> Type} {x y : A} (f : forall x, P x) 
   (p : x = y) 
-  : apd f p = apd_t f p :> (((transport p) (f x)) = f y).
+  : apd f p = apd_t f p :> (((transport _ p) (f x)) = f y).
 Proof.
   induction p.
   pose proof (apd_t f (idpath x)).
@@ -285,12 +289,12 @@ Proof.
 Qed.
 
 Definition transport_const_t {A B : Type} {x y : A} 
-(p : x = y) (b : B)  : (transport p b) = b.
+(p : x = y) (b : B)  : (transport _ p b) = b.
 Proof.
   Check paths_ind.
   exact (paths_ind
     x
-    (fun (a0 : A) (q : x = a0) => transport q b = b)
+    (fun (a0 : A) (q : x = a0) => transport _ q b = b)
     (idpath b)
     y p
     ).
@@ -303,7 +307,7 @@ Proof.
 Qed.
 
 Definition transport_const {A B : Type} {x y : A} 
-(p : x = y) (b : B)  : (transport p b) = b
+(p : x = y) (b : B)  : (transport _ p b) = b
 := match p with idpath => idpath end.
 
 Definition apd_transport 
@@ -315,7 +319,7 @@ Definition apd_transport
 Definition qp_lemma
   {A : Type} {P : A -> Type} {x y z : A}
   (p : x = y) (q : y = z) (u : P(x))
-: transport q ((transport p) u) = transport (p @ q) u.
+: transport _ q ((transport _ p) u) = transport _ (p @ q) u.
 Proof.
   Show Proof.
   induction p.
@@ -335,7 +339,7 @@ Check paths_rect.
 Print qp_lemma.
 
 Definition transport_1 
-  {A : Type} {x : A} {P : A -> Type} (u : P x) : (transport 1) u = u := idpath.
+  {A : Type} {x : A} {P : A -> Type} (u : P x) : (transport _ 1) u = u := idpath.
 
 Check transport_1.
 Print transport_1.
@@ -351,13 +355,13 @@ Print lift.
 Definition qp_lemma_d
   {A : Type} {P : A -> Type} {x y z : A}
   (p : x = y) (q : y = z) (u : P(x))
-: transport q ((transport p) u) = transport (p @ q) u
+: transport _ q ((transport _ p) u) = transport _ (p @ q) u
 := 
 match q as q0 in (_ = a) 
-  return (transport q0 (transport p u) = transport (p @ q0) u) 
+  return (transport _ q0 (transport _ p u) = transport _ (p @ q0) u) 
   with idpath => 
   match p as p0 in (_ = b)
-    return (transport 1 (transport p0 u) = transport (p0 @ 1) u)
+    return (transport _ 1 (transport _ p0 u) = transport _ (p0 @ 1) u)
     with idpath =>
       idpath
   end
@@ -371,7 +375,7 @@ qp_lemma@{u u0 u1} =
 fun (A : Type) (P : A -> Type) (x y z : A) (p : x = y) (q : y = z) (u : P x) =>
 paths_rect A x
   (fun (y0 : A) (p0 : x = y0) =>
-   forall q0 : y0 = z, transport q0 (transport p0 u) = transport (p0 @ q0) u)
+   forall q0 : y0 = z, transport q0 (transport _ p0 u) = transport (p0 @ q0) u)
   (fun q0 : x = z =>
    paths_rect A x
      (fun (z0 : A) (q1 : x = z0) =>
@@ -382,11 +386,89 @@ paths_rect A x
 (fun (A : Type) (P : A -> Type) (x y z : A) (p : x = y) (q : y = z) (u : P x) =>
  paths_rect A x
    (fun (y0 : A) (p0 : x = y0) =>
-    forall q0 : y0 = z, transport q0 (transport p0 u) = transport (p0 @ q0) u)
+    forall q0 : y0 = z, transport q0 (transport _ p0 u) = transport (p0 @ q0) u)
    (fun q0 : x = z => ?Goal@{q:=q0}) y p q)
 
  *)
 
-Print qp_lemma.
+Definition transportconst 
+  {A B : Type} {P : A -> Type} {x y : A} 
+  (p : x = y) (h : P x = B) (b : B) 
+: transport _ p b = b := 
+match p with idpath 
+  => idpath
+end.
+
+Definition l_2_3_10
+  {A B : Type} {P : B -> Type} {x y : A} {f : A -> B} 
+  (p : x = y) (u : P (f x))
+: transport (compose P f) p u = transport P (ap f p) u
+:=
+match p with idpath
+  => idpath
+end.
+
+Definition l_2_3_11
+  {A : Type} {P Q : A -> Type} {x y : A} {f : forall a, P a -> Q a}
+  (p : x = y) (u : P x)
+: transport Q p (f x u) = f y (transport P p u)
+:= 
+match p with idpath
+  => idpath
+end.
+
+Definition homotope {A} {P : A -> Type} 
+(f g : forall x, P x)
+: Type := forall x, (f x = g x).
+
+Definition homorefl 
+  {A} {P : A -> Type} 
+  (f : forall x, P x)
+: homotope f f
+:= fun x => idpath (f x).
+
+(* when you need a dependent function type out, use fun!
+   functions can be used to produce dependent function types *)
+
+Definition homosymm
+  {A} {P : A -> Type} 
+  (f g : forall x, P x)
+: homotope f g -> homotope g f
+:= fun h => fun x => (h x)^.
+
+Definition homotrans
+  {A} {P : A -> Type} 
+  (f g h : forall x, P x)
+  : homotope f g -> homotope g h -> homotope f h
+:= fun h1 h2 => fun x => (h1 x) @ (h2 x).
+
+Definition l_2_4_3
+  {A B : Type} {x y : A} {f g : A -> B} 
+  (H : homotope f g) (p : x = y)
+: H x @ ap g p = ap f p @ H y
+:= 
+(* f x = g x @ g x = g y , f x = f y @ f y = g y *)
+match p (*as p0 in (_ = y0)*)
+(*return H x @ ap g p0 = ap f p0 @ H y0*)
+with idpath
+=> (runit (H x))^ @ (lunit (H x))
+end.
+
+Definition l_2_4_3_t
+  {A B : Type} {x y : A} {f g : A -> B} 
+  (H : homotope f g) (p : x = y)
+: H x @ ap g p = ap f p @ H y.
+Proof.
+  induction p.
+  unfold homotope in *.
+  unfold ap.
+  rewrite <- lunit.
+  rewrite <- runit.
+  reflexivity.
+Defined.
+
+Print l_2_4_3.
+
+
 
 End chapter_2.
