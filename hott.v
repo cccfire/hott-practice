@@ -477,32 +477,29 @@ Print l_2_4_3.
 Definition quasiinverse
   {A B : Type} 
   (f : A -> B)
-  (g : B -> A)
-  : Type := homotope (compose f g) idmap * homotope (compose g f) idmap.
+  : Type := {g : B -> A & (homotope (compose f g) idmap * homotope (compose g f) idmap)}.
 
-Definition quasid
-  {A : Type} : quasiinverse (idmap : A -> A) (idmap) := 
-  (fun _ => idpath, fun _ => idpath).
-
-Definition qinv1_t
-  {A : Type} {x y : A}
-  (p : x = y) {z : A}
-  
-: quasiinverse (fun s : y = z => p @ s) (fun s : x = z => p^ @ s).
+Definition quasid_t
+  {A : Type} : quasiinverse (idmap : A -> A). 
 Proof.
-  induction p.
   unfold quasiinverse.
   unfold homotope.
-  split.
-  - exact (fun x => (lunit x @ (rwhisker (doubletap 1)^ x) @ concat_pp_p 1 1^ x)^ ).
-  - exact (fun x => (lunit x @ (rwhisker (doubletap 1)^ x) @ concat_pp_p 1 1^ x)^ ).
+  exact (idmap; (fun x => (idpath : idmap x = x), fun x => (idpath : idmap x = x))).
 Qed.
+
+Definition quasid
+  {A : Type} : quasiinverse (idmap : A -> A) := 
+  (idmap; (fun x => (idpath : idmap x = x), fun x => (idpath : idmap x = x))).
+
 
 Definition qinv1
   {A : Type} {x y : A}
   (p : x = y) {z : A}
-: quasiinverse (fun s : y = z => p @ s) (fun s : x = z => p^ @ s)
-:= match p with idpath => ((fun x => (lunit x @ (rwhisker (doubletap 1)^ x) @ concat_pp_p 1 1^ x)^ ),(fun x => (lunit x @ (rwhisker (doubletap 1)^ x) @ concat_pp_p 1 1^ x)^)) end.
+: quasiinverse (fun s : y = z => p @ s) 
+:= 
+match p with idpath => 
+  ((fun s : x = z => 1 @ s) ; ((fun x => (lunit x @ (rwhisker (doubletap 1)^ x) @ concat_pp_p 1 1^ x)^ ),(fun x => (lunit x @ (rwhisker (doubletap 1)^ x) @ concat_pp_p 1 1^ x)^))) 
+end.
 
 Definition isequiv
   {A B : Type} 
