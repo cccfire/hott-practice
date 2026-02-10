@@ -36,6 +36,11 @@ Theorem t_2_1_4_iii {A} (x y : A) (p : x = y) :
 induction p; reflexivity.
 Qed.
 
+Definition doubletap {A} 
+  {x y : A} (p : x = y) 
+  : p @ p^ = (idpath x)
+:= match p with idpath => idpath end.
+
 Theorem t_2_1_4_iv {A} (x y z w : A) (p : x = y) (q : y = z) (r : z = w):
   p @ (q @ r) = (p @ q) @ r.
 induction p.
@@ -469,6 +474,40 @@ Defined.
 
 Print l_2_4_3.
 
+Definition quasiinverse
+  {A B : Type} 
+  (f : A -> B)
+  (g : B -> A)
+  : Type := homotope (compose f g) idmap * homotope (compose g f) idmap.
+
+Definition quasid
+  {A : Type} : quasiinverse (idmap : A -> A) (idmap) := 
+  (fun _ => idpath, fun _ => idpath).
+
+Definition qinv1_t
+  {A : Type} {x y : A}
+  (p : x = y) {z : A}
+  
+: quasiinverse (fun s : y = z => p @ s) (fun s : x = z => p^ @ s).
+Proof.
+  induction p.
+  unfold quasiinverse.
+  unfold homotope.
+  split.
+  - exact (fun x => (lunit x @ (rwhisker (doubletap 1)^ x) @ concat_pp_p 1 1^ x)^ ).
+  - exact (fun x => (lunit x @ (rwhisker (doubletap 1)^ x) @ concat_pp_p 1 1^ x)^ ).
+Qed.
+
+Definition qinv1
+  {A : Type} {x y : A}
+  (p : x = y) {z : A}
+: quasiinverse (fun s : y = z => p @ s) (fun s : x = z => p^ @ s)
+:= match p with idpath => ((fun x => (lunit x @ (rwhisker (doubletap 1)^ x) @ concat_pp_p 1 1^ x)^ ),(fun x => (lunit x @ (rwhisker (doubletap 1)^ x) @ concat_pp_p 1 1^ x)^)) end.
+
+Definition isequiv
+  {A B : Type} 
+  (f : A -> B)
+  : Type := {g : B -> A & (homotope (compose f g) idmap)} * {h : B -> A & (homotope (compose h f) idmap)}.
 
 
 End chapter_2.
